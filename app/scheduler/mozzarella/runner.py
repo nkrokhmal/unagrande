@@ -14,27 +14,32 @@ def run_mozzarella(
     start_times=None,
     first_batch_id=1,
     optimize=True,
-    optimize_cleanings=True,
+    start_configuration=None,
     path="outputs/",
     prefix="",
 ):
     start_times = start_times or {LineName.WATER: "08:00", LineName.SALT: "07:00"}
 
-    boiling_plan_df = read_boiling_plan(boiling_plan_fn, first_batch_ids={'mozzarella': first_batch_id})
+    boiling_plan_df = read_boiling_plan(boiling_plan_fn, first_batch_ids={"mozzarella": first_batch_id})
+
     if not schedule:
+
+        # - Extra kwargs
+
+        kwargs = {} if optimize else {"start_configuration": start_configuration}
+
         schedule = make_schedule(
             boiling_plan_df,
             optimize=optimize,
-            optimize_cleanings=optimize_cleanings,
             start_times=start_times,
+            **kwargs,
         )
+
     try:
         frontend = wrap_frontend(schedule)
     except Exception as e:
         raise Exception("Ошибка при построении расписания")
 
-    res = submit_schedule(
-        "моцарелла", schedule, frontend, prefix, STYLE, path=path, open_file=open_file
-    )
+    res = submit_schedule("моцарелла", schedule, frontend, prefix, STYLE, path=path, open_file=open_file)
     res["boiling_plan_df"] = boiling_plan_df
     return res
